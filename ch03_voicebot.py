@@ -35,6 +35,30 @@ SYSTEM_PROMPT = "You are a thoughtful assistant. Respond to all input in 25 word
 STT_MODEL = "gemini-3.5-flash-lite"
 
 
+def get_apikey():
+    """API 키를 자동으로 찾아옵니다. 화면에서 입력받지 않습니다.
+
+    찾는 순서:
+      1) Streamlit secrets  — 배포할 때 사용 (.streamlit/secrets.toml 또는 클라우드 설정)
+      2) key.txt           — 로컬 실습용
+      3) 환경변수 GEMINI_API_KEY
+
+    셋 다 .gitignore에 들어 있어서 깃허브에 올라가지 않습니다.
+    키를 코드에 직접 적으면 공개 저장소에 그대로 노출되므로 이렇게 분리했습니다.
+    """
+    try:
+        if "GEMINI_API_KEY" in st.secrets:
+            return st.secrets["GEMINI_API_KEY"]
+    except Exception:
+        pass
+
+    if os.path.exists("key.txt"):
+        with open("key.txt", encoding="utf-8") as f:
+            return f.read().strip()
+
+    return os.environ.get("GEMINI_API_KEY", "")
+
+
 ##### 기능 구현 함수 #####
 def STT(audio, apikey):
     """녹음된 음성(AudioSegment)을 텍스트로 변환합니다.
@@ -135,8 +159,8 @@ def main():
     if "chat" not in st.session_state:
         st.session_state["chat"] = []
 
-    if "GEMINI_API" not in st.session_state:
-        st.session_state["GEMINI_API"] = ""
+    # API 키는 화면에서 입력받지 않고 get_apikey()로 자동으로 가져옵니다.
+    st.session_state["GEMINI_API"] = get_apikey()
 
     # Gemini의 대화 기록 형식입니다.
     # 역할 이름이 OpenAI와 다릅니다: "assistant"가 아니라 "model" 을 씁니다.
@@ -149,13 +173,11 @@ def main():
 
     # 사이드바 생성
     with st.sidebar:
-        # Gemini API 키 입력받기
-        st.session_state["GEMINI_API"] = st.text_input(
-            label="Gemini API 키",
-            placeholder="Enter Your API Key",
-            value="",
-            type="password")
-        st.caption("무료 발급: aistudio.google.com/apikey")
+        # 키가 제대로 잡혔는지만 표시합니다 (키 값 자체는 화면에 찍지 않습니다)
+        if st.session_state["GEMINI_API"]:
+            st.success("Gemini API 키 연결됨")
+        else:
+            st.error("키를 찾을 수 없습니다. key.txt를 확인하세요.")
 
         st.markdown("---")
 
