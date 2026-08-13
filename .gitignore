@@ -1,0 +1,18 @@
+# 가상환경 (절대 업로드하지 말 것 - 수백 MB이고 윈도우 전용입니다)
+ch03_env/
+
+# 실행 중 생기는 임시 음원 파일
+input.mp3
+output.mp3
+
+# 파이썬 캐시
+__pycache__/
+*.pyc
+
+# 혹시라도 API 키를 파일에 적었을 때 대비
+.env
+.streamlit/secrets.toml
+
+# 이 파일은 코드 안에 API 키를 직접 적는 실습용입니다.
+# 실수로 키가 공개되는 걸 막기 위해 아예 커밋 대상에서 제외합니다.
+ch03_whisper_example.py
