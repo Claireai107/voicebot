@@ -9,9 +9,13 @@ output.mp3
 __pycache__/
 *.pyc
 
+# 앱 실행 로그
+*.log
+
 # 혹시라도 API 키를 파일에 적었을 때 대비
 .env
 .streamlit/secrets.toml
+key.txt
 
 # 이 파일은 코드 안에 API 키를 직접 적는 실습용입니다.
 # 실수로 키가 공개되는 걸 막기 위해 아예 커밋 대상에서 제외합니다.

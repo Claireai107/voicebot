@@ -29,7 +29,10 @@ import base64
 SYSTEM_PROMPT = "You are a thoughtful assistant. Respond to all input in 25 words and answer in korean"
 
 # 음성을 텍스트로 옮길 때 쓰는 모델. 받아쓰기는 가볍고 빠른 모델로 충분합니다.
-STT_MODEL = "gemini-2.5-flash"
+#
+# 참고: gemini-2.5 계열은 모델 목록에는 보이지만 새로 발급한 키로는 호출되지 않습니다.
+#       ("no longer available to new users" 404) 그래서 3.5 이상을 씁니다.
+STT_MODEL = "gemini-3.5-flash-lite"
 
 
 ##### 기능 구현 함수 #####
@@ -157,7 +160,10 @@ def main():
         st.markdown("---")
 
         # Gemini 모델을 선택하기 위한 라디오 버튼 생성
-        model = st.radio(label="Gemini 모델", options=["gemini-2.5-flash", "gemini-2.5-pro"])
+        # pro 계열은 무료 사용량이 없어 429가 나므로 flash 계열만 넣었습니다.
+        model = st.radio(
+            label="Gemini 모델",
+            options=["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"])
 
         st.markdown("---")
 
