@@ -57,12 +57,12 @@ SYSTEM_PROMPT = (
 #       ("no longer available to new users" 404) 그래서 3.5 이상을 씁니다.
 STT_MODEL = "gemini-3.5-flash-lite"
 
-# 사이드바에서 고르는 '머리'(답변 모델)입니다.
+# 사이드바에서 고르는 '고양이 아이큐'(답변 모델)입니다.
 # pro 계열은 무료 사용량이 없어 429가 나므로 flash 계열만 넣었습니다.
 BRAINS = {
-    "똑똑한 머리": "gemini-3.6-flash",
-    "보통 머리": "gemini-3.5-flash",
-    "가벼운 머리": "gemini-3.5-flash-lite",
+    "똑똑한 냥냥": "gemini-3.6-flash",
+    "일반 냥냥": "gemini-3.5-flash",
+    "단순 냥냥": "gemini-3.5-flash-lite",
 }
 
 # 브라우저와 서버가 서로를 찾기 위한 공개 STUN 서버입니다.
@@ -168,7 +168,7 @@ def call_gemini(fn, tries=3, wait=2):
 
 
 def check_apikey(apikey):
-    """열쇠(API 키)가 진짜 쓸 수 있는 것인지 실제로 한 번 불러서 확인합니다.
+    """API 키가 진짜 쓸 수 있는 것인지 실제로 한 번 불러서 확인합니다.
 
     형식만 보고 넘어가면 "키를 넣었는데 녹음하니까 터진다"가 됩니다.
     가장 싼 모델로 한 마디만 시켜보는 게 확실합니다.
@@ -176,21 +176,21 @@ def check_apikey(apikey):
     돌려주는 값: (되는지 여부, 사람에게 보여줄 문구)
     """
     if not apikey:
-        return False, "열쇠를 먼저 입력해 주세요."
+        return False, "API 키를 먼저 입력해 주세요."
 
     try:
         client = genai.Client(api_key=apikey)
         call_gemini(lambda: client.models.generate_content(
             model=STT_MODEL, contents=["ping"]))
-        return True, "쓸 수 있는 열쇠입니다. 이제 말을 걸어보세요."
+        return True, "쓸 수 있는 API 키입니다. 이제 말을 걸어보세요."
     except Exception as e:
         msg = str(e)
         if "API_KEY_INVALID" in msg or "API key not valid" in msg:
-            return False, "맞지 않는 열쇠입니다. 앞뒤 공백이 섞이지 않았는지 확인해 주세요."
+            return False, "맞지 않는 API 키입니다. 앞뒤 공백이 섞이지 않았는지 확인해 주세요."
         if "PERMISSION_DENIED" in msg or "403" in msg:
-            return False, "이 열쇠에는 권한이 없습니다. aistudio에서 새로 발급해 보세요."
+            return False, "이 API 키에는 권한이 없습니다. aistudio에서 새로 발급해 보세요."
         if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
-            return False, "열쇠는 맞지만 오늘 사용량을 다 썼습니다."
+            return False, "API 키는 맞지만 오늘 사용량을 다 썼습니다."
         return False, f"확인하지 못했습니다 ({type(e).__name__}). 잠시 후 다시 눌러 주세요."
 
 
@@ -411,7 +411,7 @@ def main():
     if "GEMINI_API" not in st.session_state:
         st.session_state["GEMINI_API"] = ""
 
-    # 열쇠 확인 결과를 기억해 둡니다. (되는지, 보여줄 문구)
+    # API 키 확인 결과를 기억해 둡니다. (되는지, 보여줄 문구)
     if "key_checked" not in st.session_state:
         st.session_state["key_checked"] = None
 
@@ -425,12 +425,12 @@ def main():
     # 화면에 남아 있던 녹음이 다시 처리되는 걸 막는 장치였는데, 이제 마이크에서
     # 그때그때 흘러오는 소리를 쓰므로 되돌아올 녹음 자체가 없습니다.
 
-    ##### 사이드바 — 열쇠와 머리 #####
+    ##### 사이드바 — API 키와 고양이 아이큐 #####
     with st.sidebar:
-        st.subheader("🔑 열쇠")
+        st.subheader("🔑 API 키")
         key_in = st.text_input(
             label="Gemini API 키",
-            placeholder="열쇠를 붙여넣으세요",
+            placeholder="Gemini API 키를 붙여넣으세요",
             type="password",
             label_visibility="collapsed")
 
@@ -439,8 +439,8 @@ def main():
             st.session_state["GEMINI_API"] = key_in
             st.session_state["key_checked"] = None
 
-        if st.button("열쇠 확인", use_container_width=True):
-            with st.spinner("열쇠를 돌려보는 중..."):
+        if st.button("API 키 확인", use_container_width=True):
+            with st.spinner("API 키를 확인하는 중..."):
                 st.session_state["key_checked"] = check_apikey(key_in)
 
         checked = st.session_state["key_checked"]
@@ -453,7 +453,7 @@ def main():
 
         st.markdown("---")
 
-        st.subheader("🧠 머리 고르기")
+        st.subheader("🧠 고양이 아이큐 고르기")
         brain_label = st.radio(
             label="답변에 쓸 모델",
             options=list(BRAINS.keys()),
@@ -505,7 +505,6 @@ def main():
         with st.expander(f"{APP_NAME}에 대하여"):
             st.write(
                 f"""
-                - **{APP_NAME}** 는 「진짜 챗GPT API 활용법」 3장의 음성 비서를 바탕으로 만들었습니다.
                 - UI 는 스트림릿(Streamlit)으로 만들었습니다.
                 - 녹음 버튼이 없습니다. 마이크를 열어둔 채 **말이 끝나는 지점을 침묵으로 판단**합니다.
                 - STT(Speech-To-Text)는 구글의 **Gemini** 를 활용하였습니다.
@@ -515,6 +514,20 @@ def main():
                 """
             )
 
+            st.markdown("**고양이 아이큐 — 어떤 냥냥이 어떤 모델인가요?**")
+            st.table({
+                "고양이": list(BRAINS.keys()),
+                "실제 모델": list(BRAINS.values()),
+                "성격": [
+                    "가장 똑똑하지만 조금 느립니다",
+                    "속도와 똑똑함이 무난합니다",
+                    "가장 빠르고 가볍습니다",
+                ],
+            })
+            st.caption(
+                f"받아쓰기(STT)에는 아이큐와 상관없이 항상 `{STT_MODEL}` 을 씁니다. "
+                "받아쓰기는 가볍고 빠른 모델로 충분하기 때문입니다.")
+
     # 마이크가 아직 안 열렸으면 여기서 멈춥니다.
     if not ctx.state.playing:
         show_cat(cat_slot, "sleep", "START 를 눌러 주세요")
@@ -523,7 +536,7 @@ def main():
 
     # 키가 없거나 확인에 실패했으면 붙잡습니다.
     if not st.session_state["GEMINI_API"]:
-        show_cat(cat_slot, "sleep", "열쇠가 필요해요")
+        show_cat(cat_slot, "sleep", "API 키가 필요해요")
         footer()
         return
 
