@@ -22,6 +22,8 @@ from datetime import datetime
 from gtts import gTTS
 # 음원 파일을 재생하기 위한 패키지 추가
 import base64
+# 일시적인 서버 오류를 잠깐 기다렸다 다시 시도하기 위한 패키지
+import time
 
 
 # Gemini는 시스템 지시문을 대화 기록과 따로 전달합니다.
@@ -36,6 +38,27 @@ STT_MODEL = "gemini-3.5-flash-lite"
 
 
 ##### 기능 구현 함수 #####
+def call_gemini(fn, tries=3, wait=2):
+    """Gemini 호출을 감싸서, 일시적인 오류면 잠깐 기다렸다 다시 시도합니다.
+
+    Gemini는 몰릴 때 503(UNAVAILABLE, "일시적입니다")을 돌려줍니다.
+    실제로 12번 호출에 1번 꼴로 나왔고, 그대로 두면 화면에 파이썬 오류가
+    그대로 떠서 수업 중에 당황하기 쉽습니다. 잠깐 기다렸다 다시 부르면
+    대부분 그냥 성공합니다.
+
+    키가 틀렸거나 모델 이름이 잘못된 경우처럼 다시 시도해도 소용없는
+    오류는 그대로 올려보냅니다. 숨기면 원인을 못 찾습니다.
+    """
+    for attempt in range(tries):
+        try:
+            return fn()
+        except Exception as e:
+            transient = ("503" in str(e)) or ("UNAVAILABLE" in str(e))
+            if attempt == tries - 1 or not transient:
+                raise
+            time.sleep(wait)
+
+
 def STT(audio, apikey):
     """녹음된 음성(AudioSegment)을 텍스트로 변환합니다.
 
@@ -55,14 +78,14 @@ def STT(audio, apikey):
 
     # Gemini에 오디오와 지시문을 함께 전달해 텍스트 얻기
     client = genai.Client(api_key=apikey)
-    response = client.models.generate_content(
+    response = call_gemini(lambda: client.models.generate_content(
         model=STT_MODEL,
         contents=[
             types.Part.from_bytes(data=audio_bytes, mime_type="audio/mp3"),
             "이 오디오에 담긴 말을 그대로 받아써 줘. "
             "설명이나 따옴표 없이 말한 내용만 출력해.",
         ],
-    )
+    ))
     return (response.text or "").strip()
 
 
@@ -76,11 +99,11 @@ def ask_gemini(prompt, model, apikey):
         for turn in prompt
     ]
 
-    response = client.models.generate_content(
+    response = call_gemini(lambda: client.models.generate_content(
         model=model,
         contents=contents,
         config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
-    )
+    ))
     return response.text
 
 
